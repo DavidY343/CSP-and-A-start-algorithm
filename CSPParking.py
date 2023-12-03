@@ -2,28 +2,6 @@ from constraint import Problem, AllDifferentConstraint, InSetConstraint
 from constraint import *
 import sys
 
-def leer_fichero(nombre_fichero):
-    # Implementar la lectura del fichero y retornar la información necesaria
-    pass
-
-def escribir_solucion(nombre_fichero_salida, soluciones):
-    # Implementar la escritura del fichero de salida con las soluciones
-    pass
-def congelar(id_vehiculo):
-    pass
-
-def restriccion_maniobrabilidad(v1, v2, v3):
-    # Comprueba si los vehículos están en la misma fila
-    # v1[0] la fila del vehiculo 1
-    # v1[1] la columna del vehiculo 1
-    if v1[1] != v2[1] != v3[1]:
-        return True
-    if (v1[0] + 1 == v2[0]) and (v1[0] - 1 == v3[0]):
-        return False
-    if (v1[0] + 1 == v3[0]) and (v1[0] - 1 == v2[0]):
-        return False
-    return True
-
 def resolver_problema(filas, columnas, plazas_electricas, vehiculos):
     problem = Problem()
 
@@ -43,11 +21,9 @@ def resolver_problema(filas, columnas, plazas_electricas, vehiculos):
                 if otro_vehiculo != vehiculo and otro_vehiculo[1] != 'TSU':  # Si el otro vehículo no es el mismo y no es de tipo TSU
                     # Añade la restricción
                     problem.addConstraint(lambda v1, v2: v1[0] != v2[0] or v1[1] >= v2[1], (vehiculo[0], otro_vehiculo[0]))
-        """for vehiculo2 in vehiculos:
-            for vehiculo3 in vehiculos:
-                if vehiculo != vehiculo2 != vehiculo3:
-                    problem.addConstraint(restriccion_maniobrabilidad, (vehiculo[0], vehiculo2[0], vehiculo3[0]))"""
-    print("a")
+        for vehi2 in vehiculos:
+            vehiculo2id = vehi2[0]
+            problem.addConstraint(lambda v1, v2: (v1[0]-1!=v2[0] and v1[0]!=1)  or (v1[0]+1!=v2[0] and v1[0]!=filas), (id, vehiculo2id)) 
     solutions = problem.getSolutions()
     i = 0
     for sol in solutions:
