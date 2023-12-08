@@ -7,29 +7,28 @@ import random
 filas = None  # Declare filas as a global variable
 columnas = None  # Declare columnas as a global variable
 
+# Comprobar si los vehículos están en la misma fila y uno detrás del otro
+def vehiculos_en_pared(vehi_a, vehi_b):
+    return (vehi_a[0] in [1, filas] and vehi_b[0] == vehi_a[0] + (1 if vehi_a[0] == 1 else -1)) and (vehi_b[1] == vehi_a[1])
+
+# Comprobar si los vehículos están en filas adyacentes pero en columnas diferentes
+def vehiculos_adyacentes(vehi_a, vehi_b):
+    return (abs(vehi_a[0] - vehi_b[0]) == 1) and (vehi_a[1] != vehi_b[1])
+
+# Comprobar si los vehículos están bloqueados entre sí
+def vehiculos_bloqueados(vehi_a, vehi_b, vehi_c):
+    return ((vehi_a[0] + 1 == vehi_b[0]) and (vehi_a[1] == vehi_b[1])) and ((vehi_a[0] - 1 == vehi_c[0]) and (vehi_a[1] == vehi_c[1]))
+    
 def maniobrabilidad(vehi1, vehi2, vehi3):
-    #Caso de vehiculo 1 en la pared de arriba Caso de vehiculo 2 en la pared de arriba Caso de vehiculo 3 en la pared de arriba
-    if ((vehi1[0] == 1 and vehi2[0] == 2) and (vehi2[1] == vehi1[1])):
+    if vehiculos_en_pared(vehi1, vehi2) or vehiculos_en_pared(vehi1, vehi3):
         return False
-    if ((vehi1[0] == filas and vehi2[0] == filas - 1) and (vehi2[1] == vehi1[1])):
+    if vehiculos_bloqueados(vehi1, vehi2, vehi3) or vehiculos_bloqueados(vehi1, vehi3, vehi2):
         return False
-    if ((vehi1[0] == 1 and vehi3[0] == 2) and (vehi3[1] == vehi1[1])):
-        return False
-    if ((vehi1[0] == filas and vehi3[0] == filas - 1) and (vehi3[1] == vehi1[1])):
-        return False
-    if ((vehi1[0] - 1 == vehi2[0]) and (vehi1[1] != vehi2[1])) or ((vehi1[0] + 1 == vehi2[0]) and (vehi1[1] != vehi2[1])):
+    if vehiculos_adyacentes(vehi1, vehi2) or vehiculos_adyacentes(vehi1, vehi3):
         return True
-    if ((vehi1[0] - 1 == vehi3[0]) and (vehi1[1] != vehi3[1])) or ((vehi1[0] + 1 == vehi3[0]) and (vehi1[1] != vehi3[1])):
-        return True
-    if ((vehi1[0] + 1 == vehi2[0]) and (vehi1[1] == vehi2[1])):
-        if ((vehi1[0] - 1 == vehi3[0])  and (vehi1[1] == vehi3[1])):
-            return False
-        return True
-    if ((vehi1[0] + 1 == vehi3[0]) and (vehi1[1] == vehi3[1])):
-        if ((vehi1[0] - 1 == vehi2[0])  and (vehi1[1] == vehi2[1])):
-            return False
-        return True
+
     return True
+
     
 def imprimir_soluciones(soluciones, archivo):
     # Crear el nombre del archivo de salida
