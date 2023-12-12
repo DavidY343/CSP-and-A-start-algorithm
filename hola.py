@@ -90,21 +90,13 @@ class Estado:
             nuevos_pacientes_a_bordo = []
         return nuevos_pacientes_a_bordo
 
-    def energia_en(self, ubicacion):
-        x, y = ubicacion
-        costo_transicion = 1  # Costo por defecto de transición
-        if mapa[x][y].isdigit():
-            costo_transicion = int(mapa[x][y])
-        return costo_transicion
-    
     def sucesores(self):
         sucesores = []
         for ubicacion in self.ubicaciones_adyacentes():
             if self.energia > 0:  # Solo puedes moverte si tienes energía
                 paciente = self.pacientes_en(ubicacion)
                 centro_atencion = self.centro_atencion_en(ubicacion)
-
-                energia_nueva = self.energia - self.energia_en(ubicacion) if energia_handler(ubicacion) else 50
+                energia_nueva = self.energia - 1 if energia_handler(ubicacion) else 50
                 if self.agregar_paciente_a_bordo(paciente):
                     nuevos_pacientes_a_bordo = list(self.pacientes_a_bordo) + [paciente] 
                 else:
@@ -125,16 +117,17 @@ class Estado:
         return sucesores
 
     def __eq__(self, otro):
-        return (self.ubicacion == otro.ubicacion and 
+        return (self.ubicacion == otro.ubicacion and self.energia == otro.energia and 
                 self.pacientes_a_bordo == otro.pacientes_a_bordo and self.pacientes_restantes == otro.pacientes_restantes)
     def __hash__(self):
         return hash((self.ubicacion, self.energia, tuple(self.pacientes_a_bordo), tuple(self.pacientes_restantes)))
     def __str__(self):
         return f"Ubicacion: {self.ubicacion}, Energia: {self.energia}, Pacientes a Bordo: {self.pacientes_a_bordo}, Pacientes Restantes: {self.pacientes_restantes}"
-        #return f"{self.ubicacion} :{mapa[self.ubicacion[0]][self.ubicacion[1]]}: {self.energia}"
-
+        # return f"{self.ubicacion} :{mapa[self.ubicacion[0]][self.ubicacion[1]]}: {self.energia}"
     def __lt__(self, otro):
-        return ((50 - self.energia) < (50 - otro.energia))
+        # Implementa tu lógica de comparación aquí. Por ejemplo, podrías comparar los estados
+        # basándote en la energía:
+        return self.energia < otro.energia
 
 
 
@@ -173,9 +166,7 @@ def heuristica(estado):
     # Implementa tu función heurística aquí
     # Puedes probar con la distancia Manhattan, por ejemplo
     # return sum(abs(self.ubicacion[0] - x) + abs(self.ubicacion[1] - y) for x, y in ubicaciones_pacientes)
-    # return 0 
-    return (len(estado.pacientes_restantes) * 5)
-    #return (10 - len(estado.pacientes_a_bordo))
+    return 0
 
 def encontrar_p(mapa):
     for i, fila in enumerate(mapa):
@@ -196,7 +187,6 @@ def main():
     estado_inicial = Estado(ubicacion = encontrar_p(mapa), energia=50, pacientes_a_bordo=[], pacientes_restantes=inicializar_pacientes_restantes(mapa))
     solucion = a_estrella(estado_inicial, heuristica)
     if solucion is not None:
-        print(f"El programa solicon")
         for s in solucion:
             print(s)
     # Captura el tiempo de finalización
@@ -231,7 +221,6 @@ def a_estrella(estado_inicial, heuristica):
                     estado = predecesores.get(estado)
                 solucion.reverse()  # Invertimos el camino para que vaya desde el estado inicial hasta N
             else:
-                print(N)
                 # Expandimos N y lo metemos en CERRADA
                 CERRADA.add(N)
                 S = N.sucesores()  # Generamos el conjunto de sucesores de N    
