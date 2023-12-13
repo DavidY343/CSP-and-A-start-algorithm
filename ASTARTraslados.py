@@ -3,6 +3,7 @@ import heapq
 import sys
 import time
 import math
+from time import sleep
 
 # Definimos el mapa como una variable global
 mapa = []
@@ -203,7 +204,24 @@ def heuristica_distancia_minima(estado):
     if paciente_min_id is not None and paciente_min_ubi is not None:
         return (dist_min_paciente + min_centro_paciente(paciente_min_id, paciente_min_ubi)) * 100
     else:
-        return ((len(mapa) * len(mapa[0])) - len(estado.pacientes_a_bordo)) * 100
+        return (0)
+def heuristica_distancia_paciente(estado):
+    # Calcular la distancia mínima desde la ubicación actual del vehículo
+    # hasta el domicilio más cercano de un paciente que aún no ha sido recogido
+    dist_min_paciente = math.inf
+    paciente_min_id = None
+    paciente_min_ubi = None
+    for tipo_paciente, ubicaciones in estado.pacientes_restantes.items():
+        for paciente in ubicaciones:
+            aux = distancia(estado.ubicacion, paciente)
+            if aux < dist_min_paciente:
+                dist_min_paciente = aux
+    if estado.pacientes_restantes is not None:
+        return (dist_min_paciente) * 100
+    else:
+        return (0)
+
+
 
 def heuristica(estado):
     # Esta función debería devolver una estimación del coste desde el estado hasta el estado objetivo
@@ -212,9 +230,24 @@ def heuristica(estado):
     # Implementa tu función heurística aquí
     # Puedes probar con la distancia Manhattan, por ejemplo
     # return sum(abs(self.ubicacion[0] - x) + abs(self.ubicacion[1] - y) for x, y in ubicaciones_pacientes)
-    # return 0 
-    return (len(estado.pacientes_restantes) * 100)
-    #return (10 - len(estado.pacientes_a_bordo))
+    # return 0
+    pacientes_C = 0
+    pacientes_N = 0
+    print(estado.pacientes_a_bordo)
+    if (estado.pacientes_restantes.get('N', 0) != 0):
+        pacientes_N = len(estado.pacientes_restantes['N'])
+    if (estado.pacientes_restantes.get('C', 0) != 0):
+        pacientes_C = len(estado.pacientes_restantes['C'])
+    return (pacientes_C + pacientes_N) * 100
+    #return ((len(mapa) * len(mapa[0])) - len(estado.pacientes_a_bordo)) * 100
+
+def heu(estado):
+    print(sum(1 for tipo2, _ in estado.pacientes_a_bordo if tipo2 == 'N'))
+    print(sum(1 for tipo, _ in estado.pacientes_a_bordo if tipo == 'C'))
+    print((( 10 - sum(1 for tipo2, _ in estado.pacientes_a_bordo if tipo2 == 'N')) * 100 + (10 - sum(1 for tipo, _ in estado.pacientes_a_bordo if tipo == 'C')) * 20))
+    sleep(1)
+    return (( 10 - sum(1 for tipo2, _ in estado.pacientes_a_bordo if tipo2 == 'N')) * 100 + (10 - sum(1 for tipo, _ in estado.pacientes_a_bordo if tipo == 'C')) * 20)
+    #return sum((1 for tipo2, _ in estado.pacientes_a_bordo if tipo2 == 'N') + sum(1 for tipo, _ in estado.pacientes_a_bordo if tipo == 'C')) * 100
 
 def encontrar_p(mapa):
     for i, fila in enumerate(mapa):
@@ -297,7 +330,7 @@ def a_estrella(estado_inicial, heuristica):
                     if mapa[s.ubicacion[0]][s.ubicacion[1]].isdigit():
                         costo_transicion = int(mapa[s.ubicacion[0]][s.ubicacion[1]])
                     g_s = g[N] + costo_transicion
-                    h_s = heuristica(s)#heuristica_distancia_minima(s)#heuristica(s)
+                    h_s = heu(s)#heu(s)#heuristica_distancia_minima(s)#heuristica(s)#
                     f_s = g_s + h_s
                     # Si s no está en ABIERTA ni en CERRADA, lo insertamos en ABIERTA
                     if s not in CERRADA and s not in [estado for _, estado in ABIERTA]:
