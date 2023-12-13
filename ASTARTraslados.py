@@ -2,6 +2,7 @@ import csv
 import heapq
 import sys
 import time
+import math
 
 # Definimos el mapa como una variable global
 mapa = []
@@ -50,7 +51,7 @@ class Estado:
         x, y = ubicacion
         if mapa[x][y] == 'N' and 'N' in self.pacientes_restantes and ubicacion in self.pacientes_restantes['N'] and not any(tipo3 == 'C' for tipo3, _ in self.pacientes_a_bordo):
             return ('N', ubicacion)
-        elif mapa[x][y] == 'C'  and 'C' in self.pacientes_restantes and ubicacion in self.pacientes_restantes['C']:
+        elif mapa[x][y] == 'C'  and 'C' in self.pacientes_restantes and ubicacion in self.pacientes_restantes['C'] and sum(1 for tipo2, _ in self.pacientes_a_bordo if tipo2 == 'C') < 2:
             return ('C', ubicacion)
         return None
 
@@ -130,8 +131,8 @@ class Estado:
     def __hash__(self):
         return hash((self.ubicacion, self.energia, tuple(self.pacientes_a_bordo), tuple(self.pacientes_restantes)))
     def __str__(self):
-        return f"Ubicacion: {self.ubicacion}, Energia: {self.energia}, Pacientes a Bordo: {self.pacientes_a_bordo}, Pacientes Restantes: {self.pacientes_restantes}"
-        #return f"{self.ubicacion} :{mapa[self.ubicacion[0]][self.ubicacion[1]]}: {self.energia}"
+        #return f"Ubicacion: {self.ubicacion}, Energia: {self.energia}, Pacientes a Bordo: {self.pacientes_a_bordo}, Pacientes Restantes: {self.pacientes_restantes}"
+        return f"{self.ubicacion} :{mapa[self.ubicacion[0]][self.ubicacion[1]]}: {self.energia}"
 
     def __lt__(self, otro):
         return ((50 - self.energia) < (50 - otro.energia))
@@ -165,6 +166,44 @@ def leer_mapa(nombre_archivo):
             mapa.append(fila)
     return mapa
 
+def distancia(pos_ini, pos_fin):
+    x, y = pos_fin
+    v, w = pos_ini
+    return pow(pow(abs(v - x), 2) + pow(abs(w - y), 2), 0.5)
+
+def todos_los_centros():
+    todos_los_centros = {}
+    for x, fila in enumerate(mapa):
+        for y, valor in enumerate(fila):
+            if valor in ['CN', 'CC']:
+                if valor not in todos_los_centros:
+                    todos_los_centros[valor] = []
+                todos_los_centros[valor].append((x, y))
+    return todos_los_centros
+
+def min_centro_paciente(paciente_min_id, paciente_min_ubi):
+    todos = todos_los_centros()
+    centro_paciente = 'C' + paciente_min_id
+    return min(distancia(paciente_min_ubi, centro) for centro in todos[centro_paciente])
+
+
+def heuristica_distancia_minima(estado):
+    # Calcular la distancia mínima desde la ubicación actual del vehículo
+    # hasta el domicilio más cercano de un paciente que aún no ha sido recogido
+    dist_min_paciente = math.inf
+    paciente_min_id = None
+    paciente_min_ubi = None
+    for tipo_paciente, ubicaciones in estado.pacientes_restantes.items():
+        for paciente in ubicaciones:
+            aux = distancia(estado.ubicacion, paciente)
+            if aux < dist_min_paciente:
+                dist_min_paciente = aux
+                paciente_min_id = tipo_paciente
+                paciente_min_ubi = paciente
+    if paciente_min_id is not None and paciente_min_ubi is not None:
+        return (dist_min_paciente + min_centro_paciente(paciente_min_id, paciente_min_ubi)) * 100
+    else:
+        return ((len(mapa) * len(mapa[0])) - len(estado.pacientes_a_bordo)) * 100
 
 def heuristica(estado):
     # Esta función debería devolver una estimación del coste desde el estado hasta el estado objetivo
@@ -174,7 +213,7 @@ def heuristica(estado):
     # Puedes probar con la distancia Manhattan, por ejemplo
     # return sum(abs(self.ubicacion[0] - x) + abs(self.ubicacion[1] - y) for x, y in ubicaciones_pacientes)
     # return 0 
-    return (len(estado.pacientes_restantes) * 5)
+    return (len(estado.pacientes_restantes) * 100)
     #return (10 - len(estado.pacientes_a_bordo))
 
 def encontrar_p(mapa):
@@ -184,6 +223,19 @@ def encontrar_p(mapa):
                 return (i, j)
     return None
 
+def escribir_solucion(solucion, nombre_fichero):
+    with open(nombre_fichero, 'w') as f:
+        if solucion is not None:
+            for s in solucion:
+                f.write(str(s) + '\n')
+
+def escribir_estadisticas(tiempo_total, coste_total, longitud_plan, nodos_expandidos, nombre_fichero):
+    with open(nombre_fichero, 'w') as f:
+        f.write(f'Tiempo total: {tiempo_total}\n')
+        f.write(f'Coste total: {coste_total}\n')
+        f.write(f'Longitud del plan: {longitud_plan}\n')
+        f.write(f'Nodos expandidos: {nodos_expandidos}\n')
+    
 def main():
     # Captura el tiempo de inicio
     tiempo_inicio = time.time()
@@ -194,18 +246,24 @@ def main():
     global mapa
     mapa = leer_mapa(sys.argv[1])
     estado_inicial = Estado(ubicacion = encontrar_p(mapa), energia=50, pacientes_a_bordo=[], pacientes_restantes=inicializar_pacientes_restantes(mapa))
-    solucion = a_estrella(estado_inicial, heuristica)
-    if solucion is not None:
-        print(f"El programa solicon")
-        for s in solucion:
-            print(s)
-    # Captura el tiempo de finalización
+    solucion, CERRADA, g = a_estrella(estado_inicial, heuristica)
+
     tiempo_fin = time.time()
+    archivo_salida = sys.argv[1].split('.')[0]
+    nombre_fichero_solucion = f'{archivo_salida}-{sys.argv[2]}.output'
+    escribir_solucion(solucion, nombre_fichero_solucion)    
 
-    # Calcula el tiempo total
+    nombre_fichero_estadisticas = f'{archivo_salida}-{sys.argv[2]}.stats'
     tiempo_total = tiempo_fin - tiempo_inicio
-
-    print(f"El programa tardó {tiempo_total} segundos en ejecutarse.")
+    coste_total = 0
+    longitud_plan = 0
+    nodos_expandidos = 0
+    if solucion is not None:
+        coste_total = g[solucion[-1]] + 1
+        longitud_plan = len(solucion)
+    if CERRADA is not None:
+        nodos_expandidos = len(CERRADA)
+    escribir_estadisticas(tiempo_total, coste_total, longitud_plan, nodos_expandidos, nombre_fichero_estadisticas)
 
 def a_estrella(estado_inicial, heuristica):
     ABIERTA = []
@@ -231,7 +289,6 @@ def a_estrella(estado_inicial, heuristica):
                     estado = predecesores.get(estado)
                 solucion.reverse()  # Invertimos el camino para que vaya desde el estado inicial hasta N
             else:
-                print(N)
                 # Expandimos N y lo metemos en CERRADA
                 CERRADA.add(N)
                 S = N.sucesores()  # Generamos el conjunto de sucesores de N    
@@ -240,7 +297,7 @@ def a_estrella(estado_inicial, heuristica):
                     if mapa[s.ubicacion[0]][s.ubicacion[1]].isdigit():
                         costo_transicion = int(mapa[s.ubicacion[0]][s.ubicacion[1]])
                     g_s = g[N] + costo_transicion
-                    h_s = heuristica(s)
+                    h_s = heuristica(s)#heuristica_distancia_minima(s)#heuristica(s)
                     f_s = g_s + h_s
                     # Si s no está en ABIERTA ni en CERRADA, lo insertamos en ABIERTA
                     if s not in CERRADA and s not in [estado for _, estado in ABIERTA]:
@@ -248,9 +305,9 @@ def a_estrella(estado_inicial, heuristica):
                         predecesores[s] = N  # Guardamos N como el predecesor de s
                         heapq.heappush(ABIERTA, (f_s, s))
     if EXITO:
-        return solucion
+        return solucion, CERRADA, g
     else:
-        return None  # Fracaso: no se ha encontrado ninguna solución
+        return None, CERRADA, None  # Fracaso: no se ha encontrado ninguna solución
 
 if __name__ == "__main__":
     main()
