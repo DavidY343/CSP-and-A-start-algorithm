@@ -232,7 +232,24 @@ def heuristica3(estado):
     else:
         return (0)
 
+def heuristica4(estado):
+    """Estimación del costo considerando la distancia a los pacientes y la distribución de tipos de pacientes"""
+    pacientes_C = estado.pacientes_restantes.get('C', [])
+    pacientes_N = estado.pacientes_restantes.get('N', [])
 
+    # Calcular la distancia promedio a los pacientes restantes
+    distancia_promedio = 0
+    total_pacientes = len(pacientes_C) + len(pacientes_N)
+
+    if total_pacientes > 0:
+        for paciente in pacientes_C + pacientes_N:
+            distancia_promedio += distancia(estado.ubicacion, paciente)
+        distancia_promedio /= total_pacientes
+
+    # Priorizar la recogida de pacientes y su colocación en el destino adecuado
+    estimacion_recogida = (total_pacientes * factor_heuristico) / (distancia_promedio + 1)
+
+    return estimacion_recogida
 
 def heuristica1(estado):
     """Esta función debería devolver una estimación del coste, 
@@ -271,8 +288,8 @@ def escribir_estadisticas(tiempo_total, coste_total, longitud_plan, nodos_expand
 def comprobar_mapa(mapa):
     """Comprobamos que el mapa esta en el formato indicado"""
     p_contador = 0
-    for i, fila in enumerate(mapa):
-        for j, celda in enumerate(fila):
+    for _, fila in enumerate(mapa):
+        for _, celda in enumerate(fila):
             if celda == 'P':
                 p_contador += 1
             elif celda == 'N' or celda == 'CC' or celda == 'CN' or celda == 'X' or celda == 'C' or celda.isdigit():
@@ -352,8 +369,8 @@ def a_estrella(estado_inicial, numero):
                         h_s = heuristica1(s)
                     elif (int(numero) == 2):
                         h_s = heuristica2(s)
-                    elif (int(numero) == 3):
-                        h_s = heuristica3(s)
+                    elif (int(numero) == 4):
+                        h_s = heuristica4(s)
                     else:
                         h_s = heuristica1(s)
                     f_s = g_s + h_s
