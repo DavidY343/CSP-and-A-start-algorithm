@@ -40,7 +40,7 @@ def maniobrabilidad2(a1, a2):
     
 def imprimir_soluciones(soluciones, archivo):
     # Crear el nombre del archivo de salida
-    archivo_salida = archivo.split('.')[0] + '.csv'
+    archivo_salida = archivo[:-4] + '.csv'
 
     # Abrir el archivo de salida en modo escritura
     with open(archivo_salida, 'w', newline='') as f:
@@ -61,6 +61,8 @@ def imprimir_soluciones(soluciones, archivo):
             # Escribir la matriz en el archivo
             for fila in parking:
                 writer.writerow(fila)
+            # Agregar una fila vacía como separador entre soluciones
+            writer.writerow([])
 
 def resolver_problema(plazas_electricas, ambulancias):
     problem = Problem()

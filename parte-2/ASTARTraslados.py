@@ -7,8 +7,6 @@ import math
 # Definimos el mapa como una variable global
 mapa = []
 
-factor_heuristico = 100
-
 class Estado:
     def __init__(self, ubicacion, energia, pacientes_a_bordo, pacientes_restantes):
         self.ubicacion = ubicacion
@@ -143,7 +141,7 @@ class Estado:
         return hash((self.ubicacion, self.energia, tuple(self.pacientes_a_bordo), tuple(self.pacientes_restantes)))
     def __str__(self):
         #return f"Ubicacion: {self.ubicacion}, Energia: {self.energia}, Pacientes a Bordo: {self.pacientes_a_bordo}, Pacientes Restantes: {self.pacientes_restantes}"
-        return f"({self.ubicacion[0]},{self.ubicacion[0]}) :{mapa[self.ubicacion[0]][self.ubicacion[1]]}: {self.energia}"
+        return f"({self.ubicacion[0] + 1},{self.ubicacion[1] + 1}):{mapa[self.ubicacion[0]][self.ubicacion[1]]}:{self.energia}"
 
     def __lt__(self, otro):
         return ((50 - self.energia) < (50 - otro.energia))
@@ -198,6 +196,25 @@ def min_centro_paciente(paciente_min_id, paciente_min_ubi):
     return min(distancia(paciente_min_ubi, centro) for centro in todos[centro_paciente])
 
 
+def heuristica5(estado):
+    """Esta función debería devolver una estimación del coste, 
+    devuelve el numero de pacientes que quedan por recoger en cada estado multiplicado por un factor multiplicativo"""
+    pacientes_C = 0
+    pacientes_N = 0
+    distancia_CN = 0
+    distancia_CC = 0
+    distancia_P = 0
+    if (estado.pacientes_restantes.get('N', 0) != 0):
+        pacientes_N = len(estado.pacientes_restantes['N'])
+    if (estado.pacientes_restantes.get('C', 0) != 0):
+        pacientes_C = len(estado.pacientes_restantes['C'])
+    if (sum(1 for tipo2, _ in estado.pacientes_a_bordo if tipo2 == 'C') > 0):
+        distancia_CC = min_centro_paciente('C' ,estado.ubicacion)
+    if (sum(1 for tipo3, _ in estado.pacientes_a_bordo if tipo3 == 'N') > 0):
+        distancia_CN = min_centro_paciente('N' ,estado.ubicacion)
+    distancia_P = distancia(encontrar_p(), estado.ubicacion)
+    return (pacientes_C + pacientes_N + distancia_CC + distancia_CN + distancia_P)
+
 def heuristica2(estado):
     """Esta función debería devolver una estimación del coste,
     calcular la distancia mínima desde la ubicación actual del vehículo hasta el domicilio más cercano de un paciente
@@ -213,9 +230,10 @@ def heuristica2(estado):
                 paciente_min_id = tipo_paciente
                 paciente_min_ubi = paciente
     if paciente_min_id is not None and paciente_min_ubi is not None:
-        return (dist_min_paciente + min_centro_paciente(paciente_min_id, paciente_min_ubi)) * factor_heuristico
+        return (dist_min_paciente + min_centro_paciente(paciente_min_id, paciente_min_ubi))
     else:
         return (0)
+
 def heuristica3(estado):
     """Esta función debería devolver una estimación del coste, calcular la distancia mínima 
     desde la ubicación actual del vehículo hasta el domicilio más cercano de un paciente que aún no ha sido recogido"""
@@ -228,7 +246,7 @@ def heuristica3(estado):
             if aux < dist_min_paciente:
                 dist_min_paciente = aux
     if estado.pacientes_restantes is not None:
-        return (dist_min_paciente) * factor_heuristico
+        return (dist_min_paciente)
     else:
         return (0)
 
@@ -247,7 +265,7 @@ def heuristica4(estado):
         distancia_promedio /= total_pacientes
 
     # Priorizar la recogida de pacientes y su colocación en el destino adecuado
-    estimacion_recogida = (total_pacientes * factor_heuristico) / (distancia_promedio + 1)
+    estimacion_recogida = (total_pacientes) / (distancia_promedio + 1)
 
     return estimacion_recogida
 
@@ -260,7 +278,7 @@ def heuristica1(estado):
         pacientes_N = len(estado.pacientes_restantes['N'])
     if (estado.pacientes_restantes.get('C', 0) != 0):
         pacientes_C = len(estado.pacientes_restantes['C'])
-    return ((pacientes_C + pacientes_N) * factor_heuristico)
+    return (pacientes_C + pacientes_N)
 
 def encontrar_p():
     """Encuentra el parking en el mapa"""
@@ -315,7 +333,7 @@ def main():
     solucion, CERRADA, g = a_estrella(estado_inicial, sys.argv[2])
 
     tiempo_fin = time.time()
-    archivo_salida = sys.argv[1].split('.')[0]
+    archivo_salida = sys.argv[1][:-4]
     nombre_fichero_solucion = f'{archivo_salida}-{sys.argv[2]}.output'
     escribir_solucion(solucion, nombre_fichero_solucion)    
 
@@ -325,7 +343,7 @@ def main():
     longitud_plan = 0
     nodos_expandidos = 0
     if solucion is not None:
-        coste_total = g[solucion[-1]] + 1
+        coste_total = g[solucion[-1]]
         longitud_plan = len(solucion)
     if CERRADA is not None:
         nodos_expandidos = len(CERRADA)
@@ -369,8 +387,12 @@ def a_estrella(estado_inicial, numero):
                         h_s = heuristica1(s)
                     elif (int(numero) == 2):
                         h_s = heuristica2(s)
+                    elif (int(numero) == 3):
+                        h_s = heuristica3(s)
                     elif (int(numero) == 4):
                         h_s = heuristica4(s)
+                    elif (int(numero) == 5):
+                        h_s = heuristica5(s)
                     else:
                         h_s = heuristica1(s)
                     f_s = g_s + h_s
