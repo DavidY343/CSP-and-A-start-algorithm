@@ -29,6 +29,14 @@ def maniobrabilidad(a1, a2, a3):
         return False
     return True
 
+    #Maniobrabilidad cuando solo hay dos ambulancias
+def maniobrabilidad2(a1, a2):
+    if vehiculos_en_pared(a1, a2) or (a1[0] + 1 == a2[0] and a1[1] == a2[1]):
+        return False
+    if vehiculos_adyacentes(a1, a2):
+        return True
+    return True
+
     
 def imprimir_soluciones(soluciones, archivo):
     # Crear el nombre del archivo de salida
@@ -80,6 +88,11 @@ def resolver_problema(plazas_electricas, ambulancias):
                 for ambulancia3 in ambulancias:
                     if ambulancia3 != ambulancia and ambulancia3 != ambulancia2:
                         problem.addConstraint(maniobrabilidad, (ambulancia[2], ambulancia2[2], ambulancia3[2]))
+    #Si solo hay 2 ambulancias
+    if len(ambulancias) == 2:
+        for ambulancia in ambulancias:
+            for ambulancia2 in ambulancias:
+                problem.addConstraint(maniobrabilidad2, (ambulancia[2], ambulancia2[2]))
     #devolvemos las soluciones encontradas
     return problem.getSolutions()
 
