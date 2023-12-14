@@ -113,7 +113,7 @@ def leer_fichero():
     size = lines[0].strip().split('x')
     filas = int(size[0])
     columnas = int(size[1])
-    plazas_electricas = lines[1].strip()[5:-1].split(') (')
+    plazas_electricas = lines[1].strip()[4:-1].split(')(')
     plazas_electricas = [(int(plaza.split(',')[0]), int(plaza.split(',')[1])) for plaza in plazas_electricas]
     ambulancias = []
     for line in lines[2:]:
