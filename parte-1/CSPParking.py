@@ -115,8 +115,11 @@ def leer_fichero():
     size = lines[0].strip().split('x')
     filas = int(size[0])
     columnas = int(size[1])
-    plazas_electricas = lines[1].strip()[4:-1].split(')(')
-    plazas_electricas = [(int(plaza.split(',')[0]), int(plaza.split(',')[1])) for plaza in plazas_electricas]
+    plazas_electricas = []
+    line_pe = lines[1].strip()
+    if line_pe.startswith("PE:") and len(line_pe) > 3:
+        plazas_electricas = line_pe[4:-1].split(')(')
+        plazas_electricas = [(int(plaza.split(',')[0]), int(plaza.split(',')[1])) for plaza in plazas_electricas]
     ambulancias = []
     for line in lines[2:]:
         str_sol = line.strip() #Va a ser el id de nuestra variable
@@ -124,6 +127,13 @@ def leer_fichero():
         tipo = ambulancia[1]
         congelador = ambulancia[2] == 'C'
         ambulancias.append((tipo, congelador, str_sol))
+
+    if len(plazas_electricas) == 0:
+        for ambulancia in ambulancias:
+            congelador = ambulancia[1]
+            if congelador:  # Si hay alguna ambulancia con congelador y no hay plazas electricas acabamos el problema con 0 soluciones
+                imprimir_soluciones([], archivo)
+                return
 
     # Llamar a la función que resuelve el problema
     soluciones = resolver_problema(plazas_electricas, ambulancias)
