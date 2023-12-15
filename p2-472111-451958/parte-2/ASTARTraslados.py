@@ -248,7 +248,7 @@ def heuristica2(estado):
                 paciente_min_ubi = paciente
     if paciente_min_id is not None and paciente_min_ubi is not None:
         min_centro = min_centro_paciente(paciente_min_id, paciente_min_ubi)
-        return (dist_min_paciente + distancia(min_centro, paciente_min_ubi))
+        return (dist_min_paciente + distancia(min_centro, paciente_min_ubi) + distancia(min_centro, encontrar_p()))
     else:
         return distancia(estado.ubicacion, encontrar_p())
 
@@ -386,7 +386,7 @@ def a_estrella(estado_inicial, numero):
                     elif (int(numero) == 4):
                         h_s = heuristica4(s)
                     else:
-                        h_s = max(heuristica1(s), heuristica2(s), heuristica3(s))
+                        h_s = heuristica1(s)
                     f_s = g_s + h_s
                     # Si s no está en ABIERTA ni en CERRADA, lo insertamos en ABIERTA
                     if s not in CERRADA and s not in [estado for _, estado in ABIERTA]:
